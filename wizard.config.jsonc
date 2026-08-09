@@ -1,0 +1,100 @@
+{
+  // The Wizard customization config — declarative and additive.
+  //
+  // After editing this file, run:
+  //   node scripts/sync-config.js
+  //
+  // This is the framework's extension point, the equivalent of dropping a
+  // plugin entry into an oh-my-zsh .zshrc: you declare intent here, and a
+  // sync step turns it into real agent files. It never edits the shipped
+  // persona files directly — it appends a clearly-marked block to them
+  // (between WIZARD:OVERRIDE:START/END comments) that a re-run safely
+  // replaces in place. Delete the block, or delete this config entry and
+  // re-sync, to go back to the shipped default.
+  //
+  // This file ships empty on purpose. Every persona already works with
+  // zero configuration — nothing here is required. If your company has
+  // its own tools to layer on top, add them below (or, if you'd rather
+  // not edit a file inside this repo at all, in a personal config at
+  // ~/.claude/the-wizard/wizard.config.jsonc instead — same shape, see
+  // docs/CUSTOMIZING.md).
+
+  // "overrides" points one of the seven shipped personas at your OWN
+  // existing tool/skill/command IN ADDITION TO its generic, zero-config
+  // default — not instead of it. Every shipped persona already works with
+  // no configuration at all (Oracle reasons and searches the web; Fixer
+  // executes fixes and writes postmortems directly; and so on). An
+  // override is how one specific company's real, existing tools get
+  // layered on top, without touching the generic default a day-one
+  // adopter with none of these tools relies on.
+  //
+  // Key = persona name (must match a file in agents/). Only add personas
+  // you actually want to extend — anything you leave out keeps using
+  // whatever agents/<name>.md already documents as its default.
+  //
+  // Shape:
+  //   "overrides": {
+  //     "fixer": {
+  //       "pointsTo": "/my-org:lint-and-fix",
+  //       "notes": "Our own lint-and-fix skill covers routine fixes faster than Fixer's generic default."
+  //     }
+  //   }
+  //
+  // An override entry also accepts two optional MCP-specific fields, for
+  // when the "existing tool" is a company's own agent already running
+  // behind an MCP server rather than a Claude tool/skill/plugin:
+  //   "mcpServers": { "server-name": { "type": "stdio"|"http"|"sse",
+  //                                     "command"/"args"/"env" (stdio) or
+  //                                     "url"/"headers" (http/sse) } }
+  //   "mcpNotes": "what this server is for, when to use it"
+  // These don't work as a normal override — plugin subagents can't hold
+  // mcpServers frontmatter at all (a Claude Code restriction). Declaring
+  // them here makes sync-config.js materialize a *separate* copy of that
+  // persona into Claude Code's own ~/.claude/agents/, as subagent_type
+  // "wizard-<name>" instead of "wizard:<name>". See "4. Connecting to a
+  // company's own MCP-exposed agent" in docs/CUSTOMIZING.md.
+  "overrides": {},
+
+  // "customAgents" are brand-new personas beyond the pantheon of seven —
+  // for something with no generic equivalent to point at (an internal
+  // infrastructure repo, a bespoke internal tool, anything the seven
+  // shipped personas don't cover). Each entry generates its own file at
+  // agents/custom/<name>.md — nothing here touches the shipped seven.
+  // Accepts the same optional "mcpServers" / "mcpNotes" fields described
+  // above, with the same materialization behavior (a separate
+  // "wizard-<name>" copy in ~/.claude/agents/).
+  //
+  // Shape:
+  //   "customAgents": [
+  //     {
+  //       "name": "sentinel",
+  //       "description": "Security review — runs before anything touches production.",
+  //       "pointsTo": "/my-org:security-scan",
+  //       "notes": "Invoke before Fixer executes anything security-sensitive.",
+  //       "tools": "Bash, Read, Grep, Glob"
+  //     }
+  //   ]
+  "customAgents": [],
+
+  // "defaultSkills" applies to every persona file (the pantheon and any
+  // custom addition) — one shared block appended to each, kept in sync
+  // from this single list instead of copy-pasted by hand.
+  //
+  // Scope is deliberately narrow: agent-to-agent messages, tool/function
+  // descriptions, error messages, and inter-agent instructions — text a
+  // machine or non-native reader parses without a human to ask. NOT a
+  // persona's human-facing deliverable (Designer's UX copy, Council's
+  // final recommendation, Oracle's explanation) — voice and nuance still
+  // matter there, and ASD-STE100 is deliberately flat by design. See
+  // skills/ste-technical-writing/SKILL.md and skills/ste-requirements/SKILL.md.
+  "defaultSkills": [
+    {
+      "name": "ste-technical-writing",
+      "usage": "tool/function descriptions, error messages, docs, and any other written artifact aimed at a machine or non-native reader"
+    },
+    {
+      "name": "ste-requirements",
+      "usage": "translating a task into requirements or instructions for another persona/subagent to execute"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "wizard",
+  "version": "0.1.0",
+  "description": "A pantheon of seven specialist personas for Claude, inspired by oh-my-opencode-slim — rebuilt native to Claude/Cowork instead of ported from OpenCode. Every persona works with zero configuration; point any of them at your own company's existing tools via wizard.config.jsonc.",
+  "keywords": ["orchestration", "agents", "personas", "multi-agent", "subagents"]
+}
