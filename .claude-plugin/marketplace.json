@@ -1,0 +1,14 @@
+{
+  "name": "the-wizard",
+  "owner": {
+    "name": "Josiel Manzonni",
+    "url": "https://github.com/JosielManzonni"
+  },
+  "plugins": [
+    {
+      "name": "wizard",
+      "source": "./",
+      "description": "A pantheon of seven specialist personas for Claude, inspired by oh-my-opencode-slim. Every persona works with zero configuration; point any of them at your own tools via wizard.config.jsonc."
+    }
+  ]
+}
