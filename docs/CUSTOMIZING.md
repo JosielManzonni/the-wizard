@@ -32,6 +32,9 @@ commented-out shape for each field directly in the file:
   just one. Ships pointing at the bundled `ste-technical-writing` and
   `ste-requirements` skills — see "House convention" below.
 
+Both configs also accept `modelsByProvider` — see "Model routing:
+`modelsByProvider`" below.
+
 After editing the config, run:
 
 ```bash
@@ -50,7 +53,8 @@ plugin, that's still "editing a shipped file," which defeats the point.
 ```
 
 Same exact shape as `wizard.config.jsonc` — `overrides`, `customAgents`,
-`defaultSkills` — and it's optional; nothing warns or fails if it's
+`defaultSkills` — and, same as the repo config, `modelsByProvider` (see
+below). It's optional; nothing warns or fails if it's
 absent. It gets merged on top of this repo's own config: if you declare
 an override or custom agent with the same name as one already in
 `wizard.config.jsonc`, yours wins; anything you don't touch keeps working
@@ -277,6 +281,109 @@ The two bundled skills live at `skills/ste-technical-writing/SKILL.md` and
 `skills/ste-requirements/SKILL.md`. Replace `defaultSkills` with your own
 list to make a different convention the house default — anything you put
 there gets the same non-destructive append treatment as an override.
+
+## Model routing: `modelsByProvider`
+
+A field riding the same two mechanisms above (2 and 3), not a sixth
+delivery mechanism: an optional `modelsByProvider` key, accepted at the
+top level of either config and on any `overrides.<persona>` or
+`customAgents[]` entry.
+
+### Schema
+
+```jsonc
+"modelsByProvider": {
+  "anthropic": ["fable", "opus", "sonnet"],
+  "openai": ["gpt-5", "gpt-4.1"]
+}
+```
+
+Keys are AI company names, free-form. Values are ordered model-name
+lists — first entry preferred, the rest fallback order. **This repo never
+executes the fallback** — it only declares the priority; running the list
+and picking the first available model is the host's job. See
+`docs/PANTHEON.md`'s "Model routing → reasoning effort" note for why
+Claude Code specifically can't do this itself.
+
+### Merge rules
+
+- A top-level `modelsByProvider` in a personal config merges over this
+  repo's own, **per provider key** — `{ ...shipped, ...user }`. A provider
+  present in both sides takes the user's whole list; a provider present in
+  only one side survives untouched.
+- A per-entry `modelsByProvider` (on `overrides.<persona>` or a
+  `customAgents[]` entry) merges over the resolved global mapping the same
+  way, per provider key.
+- Neither merge ever splices two lists for the same provider — list order
+  is the fallback order, and interleaving two different priority lists
+  would produce a meaningless chain.
+- Caveat: a user's `overrides.<persona>` entry still replaces the shipped
+  `overrides.<persona>` entry **as a whole object**, same as it always
+  has — including its `modelsByProvider`. Overriding a persona's
+  `pointsTo` and keeping the shipped `modelsByProvider` at the same time
+  means restating both in the user's entry.
+
+### In Claude Code, only `anthropic[0]` acts
+
+Claude Code subagents run Claude models only — there's no supported way to
+route a `model:` frontmatter field to a non-Anthropic vendor. Of the whole
+resolved mapping, exactly one slice is actionable here: `anthropic[0]`.
+`scripts/sync-config.js` mirrors it into that persona's `model:`
+frontmatter on every sync. The full map — every provider, not just
+`anthropic` — is still written into the persona file, as documentation for
+a host that isn't Claude Code (OpenCode routes across vendors natively).
+
+### The marker block
+
+Every persona that resolves a non-empty mapping gets a
+`<!-- WIZARD:MODEL-ROUTING:START/END -->` block appended, the same
+non-destructive append/update contract as an override block: the fenced
+JSON is the resolved mapping, re-synced in place on every run. This block
+is the artifact another host reads to act on providers Claude Code itself
+can't.
+
+### Interaction with a hand-written `model:` line
+
+`agents/orchestrator.md` and `agents/explorer.md` ship with hand-pinned
+`model:` values today. Config wins: if a resolved mapping has an
+`anthropic` entry, its `[0]` overwrites whatever `model:` line is already
+there, and the sync script prints one notice —
+`model: <old> -> <new> in <file> (from modelsByProvider)`. No
+`modelsByProvider` at all, for a persona or globally, leaves an existing
+`model:` line untouched — the sync script only ever writes a `model:`
+line it has a config-derived value for.
+
+### Stale-block contract
+
+Same as an override block: the sync script only adds or updates a
+MODEL-ROUTING block, it never removes one. Deleting `modelsByProvider`
+from config and re-syncing leaves the last-synced block (and the `model:`
+line it produced) in place — remove the marked block, and revert `model:`
+by hand, if you want a persona back to its shipped default.
+
+### Worked example: a global mapping, with Explorer pinned to `haiku`
+
+```jsonc
+{
+  "modelsByProvider": {
+    "anthropic": ["sonnet", "opus"],
+    "openai": ["gpt-5", "gpt-4.1"]
+  },
+  "overrides": {
+    "explorer": {
+      "modelsByProvider": { "anthropic": ["haiku"] }
+    }
+  }
+}
+```
+
+After `node scripts/sync-config.js`: every persona except Explorer gets
+`model: sonnet` and a routing block showing
+`{"anthropic": ["sonnet", "opus"], "openai": [...]}`. Explorer's
+per-entry `anthropic` replaces the global list for that one provider only
+— it keeps `model: haiku`, and its own block shows
+`{"anthropic": ["haiku"], "openai": [...]}` — the global `openai` list
+still applies, since Explorer's entry never mentioned that provider.
 
 ## Future work: a grilling-based skill, not a spec-driven pipeline
 

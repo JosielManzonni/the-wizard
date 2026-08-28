@@ -71,6 +71,72 @@ repo they are):
 
 See `docs/CUSTOMIZING.md` for the full mechanics of all five.
 
+## Model routing: `modelsByProvider`
+
+An optional `modelsByProvider` key lets you set, per AI provider, which
+models a persona should prefer. Add it to either `wizard.config.jsonc`
+(mechanism 2 above) or `~/.claude/the-wizard/wizard.config.jsonc`
+(mechanism 3), then run `node scripts/sync-config.js`:
+
+```jsonc
+{
+  "modelsByProvider": {
+    "anthropic": ["sonnet", "opus"],
+    "openai": ["gpt-5", "gpt-4.1"]
+  }
+}
+```
+
+Each provider's list is a fallback order — first entry preferred. Override
+it for one persona under `overrides.<persona>.modelsByProvider`. Two
+examples:
+
+Let Oracle use OpenAI models:
+
+```jsonc
+{
+  "overrides": {
+    "oracle": {
+      "modelsByProvider": { "openai": ["gpt-lua", "gpt-sol"] }
+    }
+  }
+}
+```
+
+The Wizard doesn't validate non-Anthropic model names — `gpt-lua` and
+`gpt-sol` above pass through as-is, so use whatever names your own OpenAI
+account recognizes.
+
+Pin Explorer to a cheap Anthropic model, and also let it use DeepSeek:
+
+```jsonc
+{
+  "overrides": {
+    "explorer": {
+      "modelsByProvider": {
+        "anthropic": ["haiku"],
+        "deepseek": ["deepseek-chat"]
+      }
+    }
+  }
+}
+```
+
+**Be clear about what this does.** List order is fallback priority, not an
+order this repo executes — running the list and picking the first
+available model is the *host's* job. In Claude Code, only `anthropic[0]`
+is actionable: Claude Code subagents run Claude models only, so the sync
+script mirrors `anthropic[0]` into that persona's `model:` frontmatter and
+nothing else. The full per-provider map — every provider, not just
+`anthropic` — still gets written into the persona file as a
+machine-readable `WIZARD:MODEL-ROUTING` block, for a multi-model host such
+as OpenCode to read and act on. So "let Oracle use `gpt-lua`" means:
+declared and readable by hosts that route across vendors, not something
+Claude Code itself will run.
+
+See `docs/CUSTOMIZING.md`'s "Model routing: `modelsByProvider`" section for
+merge rules and edge cases.
+
 ## House convention: Simplified Technical English
 
 Every persona ships with a `defaultSkills` block (see `docs/CUSTOMIZING.md`)

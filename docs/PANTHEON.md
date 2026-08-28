@@ -36,12 +36,21 @@ and a worked example.
 
 ## Notes
 
-- **Model routing → reasoning effort.** oh-my-opencode-slim routes tasks
-  across different model providers by cost/quality. Claude doesn't have that
-  axis in the same way — the equivalent lever here is reasoning effort
-  (`low`/`medium`/`high`/`xhigh`/`max`) and choice of subagent type, not
-  swapping vendors. Oracle and Council both lean on this instead of model
-  routing.
+- **Model routing → reasoning effort, plus a declarative cross-vendor map
+  for other hosts.** oh-my-opencode-slim routes tasks across different
+  model providers by cost/quality. Claude Code can't do that itself —
+  subagents run Claude models only, with no supported way to route a
+  `model:` frontmatter field to a non-Anthropic vendor — so reasoning
+  effort (`low`/`medium`/`high`/`xhigh`/`max`) and choice of subagent type
+  remain the lever *in Claude Code*; Oracle and Council both lean on this.
+  Since this repo's personas also run under OpenCode, which does route
+  across vendors natively, `wizard.config.jsonc` (or a personal config)
+  now also accepts an optional `modelsByProvider` field: an ordered
+  fallback-priority list of models per AI company. `scripts/sync-config.js`
+  mirrors the one actionable slice — `anthropic[0]` — into each persona's
+  `model:` frontmatter, and writes the full map into the persona file as a
+  machine-readable block for a host that isn't Claude Code. See
+  `docs/CUSTOMIZING.md`, "Model routing: `modelsByProvider`".
 - **No Observer yet.** oh-my-opencode-slim has an optional Observer for
   visual analysis when the main model isn't multimodal. Claude is
   multimodal natively, so there's no gap to fill here — omitted on purpose,

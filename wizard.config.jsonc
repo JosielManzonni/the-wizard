@@ -97,4 +97,15 @@
       "usage": "translating a task into requirements or instructions for another persona/subagent to execute"
     }
   ]
+
+  // Optional: per-provider model priority lists (order = fallback priority,
+  // first entry = preferred). Executing the fallback is the host's job.
+  // In Claude Code only anthropic[0] is actionable — the sync script mirrors
+  // it into each persona's `model:` frontmatter. The full map is emitted into
+  // each persona file as a machine-readable block for other hosts (OpenCode).
+  // Also accepted per-persona on any overrides/customAgents entry.
+  // "modelsByProvider": {
+  //   "anthropic": ["fable", "opus", "sonnet"],
+  //   "openai": ["gpt-5", "gpt-4.1"]
+  // },
 }
